@@ -101,12 +101,12 @@ def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = Updater(BOT_TOKEN, workers=0)
+    updater = Updater(token=BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(filters.text & ~filters.command, check_language))
+    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
     dp.add_error_handler(error)
 
     updater.start_polling()

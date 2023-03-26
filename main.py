@@ -1,9 +1,8 @@
 import logging
 import re
-import langdetect
+from langdetect import detect_langs
 from telegram import Update
-import telegram
-import telegram.ext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 
 def read_api_key(filename):

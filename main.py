@@ -56,7 +56,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: Updater, context: telegram.ext.CallbackContext):
+def bot_checker(update: Updater, context: CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
@@ -76,7 +76,7 @@ def bot_checker(update: Updater, context: telegram.ext.CallbackContext):
             except telegram.error.BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
-def check_language(update: Update, context: telegram.ext.CallbackContext):
+def check_language(update: Update, context: CallbackContext):
     text = update.message.text
     detected_langs = langdetect.detect_langs(text)
     
@@ -98,16 +98,16 @@ def check_language(update: Update, context: telegram.ext.CallbackContext):
         except telegram.error.BadRequest as e:
             logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
-def error(update: Update, context: telegram.ext.CallbackContext):
+def error(update: Update, context: CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = telegram.ext.Updater(token=BOT_TOKEN, use_context=True)
+    updater = Updater(token=BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    dp.add_handler(telegram.ext.CommandHandler('start', start))
-    dp.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text & ~telegram.ext.Filters.command, check_language))
+    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(MessageHandler(filters.status_update.new_chat_members, bot_checker))
+    dp.add_handler(MessageHandler(filters.text & ~filters.command, check_language))
     dp.add_error_handler(error)
 
     updater.start_polling()

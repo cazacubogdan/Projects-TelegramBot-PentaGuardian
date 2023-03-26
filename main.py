@@ -11,7 +11,7 @@ def read_api_key(filename):
     return api_key
 
 # Read the API key from a file
-API_KEY_FILE = 'api_key.txt'
+API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
 # Set up logging

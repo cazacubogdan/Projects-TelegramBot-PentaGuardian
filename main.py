@@ -101,7 +101,7 @@ def error(update: Update, context: CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = Updater(token=BOT_TOKEN, use_context=True)
+    updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
@@ -114,3 +114,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    

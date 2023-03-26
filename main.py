@@ -1,9 +1,9 @@
 import logging
 import re
 import langdetect
-import telegram
-import telegram.ext
-import telegram.error
+from telegram import Update as TelegramUpdate
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext as TelegramCallbackContext
+from telegram.error import BadRequest
 
 def read_api_key(filename):
     with open(filename, 'r') as f:
@@ -42,7 +42,7 @@ EXCEPTIONS_LIST_FILE = 'exceptions_list.txt'
 BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 
-def start(update: Update, context: CallbackContext):
+def start(update: TelegramUpdate, context: TelegramCallbackContext):
     update.message.reply_text('Hi! I am a bot to keep unwanted users and bots out of your channel.')
 
 def bot_pattern(username: str):

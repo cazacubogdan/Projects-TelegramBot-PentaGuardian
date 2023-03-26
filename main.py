@@ -56,7 +56,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: Update, context: telegram.ext.CallbackContext):
+def bot_checker(update: Updater, context: telegram.ext.CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 

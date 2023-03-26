@@ -41,7 +41,7 @@ EXCEPTIONS_LIST_FILE = 'exceptions_list.txt'
 BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 
-def start(update: Update, context: CallbackContext):
+def start(bot, update):
     update.message.reply_text('Hi! I am a bot to keep unwanted users and bots out of your channel.')
 
 def bot_pattern(username: str):
@@ -55,7 +55,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: Update, context: CallbackContext):
+def bot_checker(bot, update):
     for user in update.message.new_chat_members:
         user_id = user.id
 
@@ -75,7 +75,7 @@ def bot_checker(update: Update, context: CallbackContext):
             except BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
-def check_language(update: Update, context: CallbackContext):
+def check_language(bot, update):
     text = update.message.text
     detected_langs = langdetect.detect_langs(text)
     
@@ -97,11 +97,11 @@ def check_language(update: Update, context: CallbackContext):
         except BadRequest as e:
             logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
-def error(update: Update, context: CallbackContext):
+def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
+    updater = Updater(BOT_TOKEN)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
@@ -114,4 +114,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

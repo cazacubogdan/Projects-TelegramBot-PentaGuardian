@@ -101,7 +101,7 @@ def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = Updater(BOT_TOKEN)
+    updater = Updater(token=BOT_TOKEN)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))

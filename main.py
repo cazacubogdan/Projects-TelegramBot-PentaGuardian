@@ -14,7 +14,7 @@ API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
 # Set up logging to a specific file
-LOG_FILE = '/var/www/pentabot-scc/bot_kicker.log'
+LOG_FILE = 'bot_kicker.log'
 logging.basicConfig(
     filename=LOG_FILE,
     filemode='a',

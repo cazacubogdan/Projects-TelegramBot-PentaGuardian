@@ -2,7 +2,7 @@ import logging
 import re
 import langdetect
 import telegram
-import telegram.ext
+# import telegram.ext
 import telegram.error
 
 def read_api_key(filename):
@@ -10,12 +10,14 @@ def read_api_key(filename):
         api_key = f.readline().strip()
     return api_key
 
-# Read the API key from a file
 API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
-# Set up logging
+# Set up logging to a specific file
+LOG_FILE = '/var/www/pentabot-scc/bot_kicker.log'
 logging.basicConfig(
+    filename=LOG_FILE,
+    filemode='a',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
@@ -54,15 +56,13 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: Update, context: CallbackContext):
+def bot_checker(update: telegram.Update, context: telegram.ext.CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
-        # Skip processing for users in the exceptions list
         if user_id in ID_EXCEPTIONS:
             continue
 
-        # Check if the user is in the ban list or is a potential bot
         if user_id in BAN_LIST or user.is_bot or bot_pattern(user.username):
             chat_id = update.message.chat.id
             bot = context.bot
@@ -71,21 +71,19 @@ def bot_checker(update: Update, context: CallbackContext):
                 update.message.reply_text(f'Removed user/bot @{user.username} from the channel.')
                 logger.info(f'Removed user/bot @{user.username} from chat_id {chat_id}')
                 
-                # Add removed user ID to the ban list and update the file
                 BAN_LIST.add(user_id)
                 save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
-            except BadRequest as e:
+            except telegram.error.BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
-def check_language(update: Update, context: CallbackContext):
+def check_language(update: telegram.Update, context: telegram.ext.CallbackContext):
     text = update.message.text
-    detected_langs = detect_langs(text)
+    detected_langs = langdetect.detect_langs(text)
     
     for lang_prob in detected_langs:
         if lang_prob.lang == 'en' and lang_prob.prob > 0.8:
-            return  # English detected, no action needed
+            return
 
-    # If non-English message is detected, ban the user
     user = update.message.from_user
     user_id = user.id
     
@@ -97,19 +95,19 @@ def check_language(update: Update, context: CallbackContext):
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
             logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')
-        except BadRequest as e:
+        except telegram.error.BadRequest as e:
             logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
-def error(update: Update, context: CallbackContext):
+def error(update: telegram.Update, context: telegram.ext.CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = Updater(token=BOT_TOKEN, use_context=True)
+    updater = telegram.ext.Updater(token=BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
+    dp.add_handler(telegram.ext.CommandHandler('start', start))
+    dp.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.status_update.new_chat_members, bot_checker))
+    dp.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text & ~telegram.ext.Filters.command, check_language))
     dp.add_error_handler(error)
 
     updater.start_polling()

@@ -56,7 +56,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: telegram.Update, context: telegram.ext.CallbackContext):
+def bot_checker(update: Update, context: telegram.ext.CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
@@ -76,7 +76,7 @@ def bot_checker(update: telegram.Update, context: telegram.ext.CallbackContext):
             except telegram.error.BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
-def check_language(update: telegram.Update, context: telegram.ext.CallbackContext):
+def check_language(update: Update, context: telegram.ext.CallbackContext):
     text = update.message.text
     detected_langs = langdetect.detect_langs(text)
     
@@ -98,7 +98,7 @@ def check_language(update: telegram.Update, context: telegram.ext.CallbackContex
         except telegram.error.BadRequest as e:
             logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
-def error(update: telegram.Update, context: telegram.ext.CallbackContext):
+def error(update: Update, context: telegram.ext.CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():

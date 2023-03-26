@@ -3,7 +3,6 @@ import re
 from langdetect import detect_langs
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from telegram.error import BadRequest
 
 def read_api_key(filename):
     with open(filename, 'r') as f:

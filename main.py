@@ -13,10 +13,6 @@ def read_api_key(filename):
 API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
-class CustomUpdater(telegram.ext.Updater):
-    def __init__(self, token):
-        super().__init__(token)
-
 # Set up logging to a specific file
 LOG_FILE = 'bot_kicker.log'
 logging.basicConfig(
@@ -105,7 +101,7 @@ def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = CustomUpdater(BOT_TOKEN)
+    updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start, pass_context=True))

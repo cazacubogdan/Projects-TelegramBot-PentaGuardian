@@ -102,12 +102,12 @@ def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    updater = telegram.ext.Updater(BOT_TOKEN, use_context=True)
+    updater = telegram.ext.Updater(BOT_TOKEN)
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
+    dp.add_handler(CommandHandler('start', start, pass_context=True))
+    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker, pass_context=True))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language, pass_context=True))
     dp.add_error_handler(error)
 
     updater.start_polling()

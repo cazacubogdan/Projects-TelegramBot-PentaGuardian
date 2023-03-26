@@ -101,6 +101,7 @@ def error(bot, update, error):
     logger.error(f'Update {update} caused error {context.error}')
 
 def main():
+    print("Script is running...")
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 

@@ -2,7 +2,7 @@ import logging
 import re
 import langdetect
 import telegram
-# import telegram.ext
+import telegram.ext
 import telegram.error
 
 def read_api_key(filename):

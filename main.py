@@ -1,8 +1,8 @@
 import logging
 import re
 import langdetect
-from telegram import Update as TelegramUpdate
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext as TelegramCallbackContext
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 
 def read_api_key(filename):
@@ -23,7 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load ban list and exceptions list from files
 def load_ids_from_file(filename):
     try:
         with open(filename, 'r') as f:
@@ -42,7 +41,7 @@ EXCEPTIONS_LIST_FILE = 'exceptions_list.txt'
 BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 
-def start(update: TelegramUpdate, context: TelegramCallbackContext):
+def start(update: Update, context: CallbackContext):
     update.message.reply_text('Hi! I am a bot to keep unwanted users and bots out of your channel.')
 
 def bot_pattern(username: str):
@@ -56,7 +55,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(update: Updater, context: CallbackContext):
+def bot_checker(update: Update, context: CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
@@ -73,7 +72,7 @@ def bot_checker(update: Updater, context: CallbackContext):
                 
                 BAN_LIST.add(user_id)
                 save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
-            except telegram.error.BadRequest as e:
+            except BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
 def check_language(update: Update, context: CallbackContext):
@@ -95,7 +94,7 @@ def check_language(update: Update, context: CallbackContext):
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
             logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')
-        except telegram.error.BadRequest as e:
+        except BadRequest as e:
             logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
 def error(update: Update, context: CallbackContext):
@@ -106,8 +105,8 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(filters.text & ~filters.command, check_language))
+    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
     dp.add_error_handler(error)
 
     updater.start_polling()

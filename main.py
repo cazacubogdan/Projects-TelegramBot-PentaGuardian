@@ -2,7 +2,7 @@ import logging
 import re
 import langdetect
 from telegram import Update as TelegramUpdate
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext as TelegramCallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext as TelegramCallbackContext
 from telegram.error import BadRequest
 
 def read_api_key(filename):

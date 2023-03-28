@@ -13,7 +13,7 @@ API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
 # Set up logging to a specific file
-LOG_FILE = 'bot_kicker.log'
+LOG_FILE = '/bot_kicker.log'
 logging.basicConfig(
     filename=LOG_FILE,
     filemode='a',
@@ -41,7 +41,7 @@ BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 
 def start(bot, update):
-    update.message.reply_text('Hi! I am a bot to keep unwanted users and bots out of your channel.')
+    update.message.reply_text('Hi! I am PentaGuardian!')
 
 def bot_pattern(username: str):
     bot_patterns = [

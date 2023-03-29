@@ -65,7 +65,7 @@ def bot_checker(update: Update, context: CallbackContext):
             chat_id = update.message.chat.id
             bot = context.bot
             try:
-                bot.kick_chat_member(chat_id, user_id)
+                bot.ban_chat_member(chat_id, user_id)
                 update.message.reply_text(f'Removed user/bot @{user.username} from the channel.')
                 logger.info(f'Removed user/bot @{user.username} from chat_id {chat_id}')
                 
@@ -89,7 +89,7 @@ def check_language(update: Update, context: CallbackContext):
         chat_id = update.message.chat.id
         bot = context.bot
         try:
-            bot.kick_chat_member(chat_id, user_id)
+            bot.ban_chat_member(chat_id, user_id)
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
             logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')

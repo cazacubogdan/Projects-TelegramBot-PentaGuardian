@@ -93,22 +93,21 @@ def check_language(update: Update, context: CallbackContext):
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
             logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')
-
-    except BadRequest as e:
-        logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
+        except BadRequest as e:
+            logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
 def error(update: Update, context: CallbackContext):
-logger.error(f'Update {update} caused error {context.error}')
+    logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-print("Script is running...")
-updater = Updater(BOT_TOKEN, use_context=True)
-dp = updater.dispatcher
+    print("Script is running...")
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-dp.add_handler(CommandHandler('start', start))
-dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
-dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
-dp.add_error_handler(error)
+    dp..add_handler(CommandHandler('start', start))
+    dp..add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
+    dp..add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
+    dp..add_error_handler(error)
 
 updater.start_polling()
 updater.idle()

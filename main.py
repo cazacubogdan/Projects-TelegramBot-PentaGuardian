@@ -3,24 +3,12 @@ import re
 from langdetect import detect_langs
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.error import BadRequest
 
 def read_api_key(filename):
     with open(filename, 'r') as f:
         api_key = f.readline().strip()
     return api_key
-
-API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
-BOT_TOKEN = read_api_key(API_KEY_FILE)
-
-# Set up logging to a specific file
-LOG_FILE = '/bot_kicker.log'
-logging.basicConfig(
-    filename=LOG_FILE,
-    filemode='a',
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
 
 def load_ids_from_file(filename):
     try:
@@ -35,12 +23,24 @@ def save_ids_to_file(filename, ids):
         for id in ids:
             f.write(f'{id}\n')
 
+API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
+BOT_TOKEN = read_api_key(API_KEY_FILE)
+
+LOG_FILE = '/bot_kicker.log'
+logging.basicConfig(
+    filename=LOG_FILE,
+    filemode='a',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
 BAN_LIST_FILE = 'ban_list.txt'
 EXCEPTIONS_LIST_FILE = 'exceptions_list.txt'
 BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 
-def start(bot, update):
+def start(update: Update, context: CallbackContext):
     update.message.reply_text('Hi! I am PentaGuardian!')
 
 def bot_pattern(username: str):
@@ -54,7 +54,7 @@ def bot_pattern(username: str):
             return True
     return False
 
-def bot_checker(bot, update):
+def bot_checker(update: Update, context: CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
@@ -74,9 +74,9 @@ def bot_checker(bot, update):
             except BadRequest as e:
                 logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
 
-def check_language(bot, update):
+def check_language(update: Update, context: CallbackContext):
     text = update.message.text
-    detected_langs = langdetect.detect_langs(text)
+    detected_langs = detect_langs(text)
     
     for lang_prob in detected_langs:
         if lang_prob.lang == 'en' and lang_prob.prob > 0.8:
@@ -93,24 +93,25 @@ def check_language(bot, update):
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
             logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')
-        except BadRequest as e:
-            logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
 
-def error(bot, update, error):
-    logger.error(f'Update {update} caused error {context.error}')
+    except BadRequest as e:
+        logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
+
+def error(update: Update, context: CallbackContext):
+logger.error(f'Update {update} caused error {context.error}')
 
 def main():
-    print("Script is running...")
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+print("Script is running...")
+updater = Updater(BOT_TOKEN, use_context=True)
+dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
-    dp.add_error_handler(error)
+dp.add_handler(CommandHandler('start', start))
+dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
+dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
+dp.add_error_handler(error)
 
-    updater.start_polling()
-    updater.idle()
+updater.start_polling()
+updater.idle()
 
-if __name__ == '__main__':
-    main()
+if name == 'main':
+main()

@@ -1,9 +1,9 @@
 import logging
 import re
-from langdetect import detect_langs
-from telegram import Update
+from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
+import os
 
 def read_api_key(filename):
     with open(filename, 'r') as f:
@@ -23,6 +23,9 @@ def save_ids_to_file(filename, ids):
         for id in ids:
             f.write(f'{id}\n')
 
+def get_challenge():
+    return "What is the result of 2 + 3?"
+
 API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
 
@@ -37,64 +40,65 @@ logger = logging.getLogger(__name__)
 
 BAN_LIST_FILE = 'ban_list.txt'
 EXCEPTIONS_LIST_FILE = 'exceptions_list.txt'
+PENDING_USERS_FILE = 'pending_users.txt'
 BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
+PENDING_USERS = load_ids_from_file(PENDING_USERS_FILE)
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text('Hi! I am PentaGuardian!')
 
-def bot_pattern(username: str):
-    bot_patterns = [
-        r'^bot_',
-        r'_bot$',
-    ]
+def send_challenge(update: Update, context: CallbackContext, user_id: int):
+    challenge = get_challenge()
+    message = context.bot.send_message(chat_id=user_id, text=challenge, reply_markup=ForceReply())
+    return message.message_id
 
-    for pattern in bot_patterns:
-        if re.search(pattern, username, re.IGNORECASE):
-            return True
-    return False
+def handle_challenge_response(update: Update, context: CallbackContext, user_id: int, message_id: int):
+    response = update.message.text.strip()
 
-def bot_checker(update: Update, context: CallbackContext):
-    for user in update.message.new_chat_members:
-        user_id = user.id
-
-        if user_id in ID_EXCEPTIONS:
-            continue
-
-        if user_id in BAN_LIST or user.is_bot or bot_pattern(user.username):
-            chat_id = update.message.chat.id
-            bot = context.bot
-            try:
-                bot.ban_chat_member(chat_id, user_id)
-                update.message.reply_text(f'Removed user/bot @{user.username} from the channel.')
-                logger.info(f'Removed user/bot @{user.username} from chat_id {chat_id}')
-                
-                BAN_LIST.add(user_id)
-                save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
-            except BadRequest as e:
-                logger.error(f'Failed to remove user/bot @{user.username} from chat_id {chat_id}: {e}')
-
-def check_language(update: Update, context: CallbackContext):
-    text = update.message.text
-    detected_langs = detect_langs(text)
-    
-    for lang_prob in detected_langs:
-        if lang_prob.lang == 'en' and lang_prob.prob > 0.8:
-            return
-
-    user = update.message.from_user
-    user_id = user.id
-    
-    if user_id not in ID_EXCEPTIONS:
+    if response == "5":
+        # Correct answer, remove user from pending users list
+        PENDING_USERS.discard(user_id)
+        save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
+    else:
+        # Incorrect answer or non-human response, ban the user
         chat_id = update.message.chat.id
         bot = context.bot
         try:
             bot.ban_chat_member(chat_id, user_id)
             BAN_LIST.add(user_id)
             save_ids_to_file(BAN_LIST_FILE, BAN_LIST)
-            logger.info(f'Banned user @{user.username} (ID: {user_id}) for non-English message in chat_id {chat_id}')
+            logger.info(f'Banned user (ID: {user_id}) for incorrect challenge response in chat_id {chat_id}')
         except BadRequest as e:
-            logger.error(f'Failed to ban user @{user.username} (ID: {user_id}) in chat_id {chat_id}: {e}')
+            logger.error(f'Failed to ban user (ID: {user_id}) in chat_id {chat_id}: {e}')
+
+def new_member_handler(update: Update, context: CallbackContext):
+    for user in update.message.new_chat_members:
+        user_id = user.id
+
+        if user_id in ID_EXCEPTIONS or user_id in BAN_LIST:
+            continue
+        PENDING_USERS.add(user_id)
+        save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
+
+        # Send the challenge to the new user
+        try:
+            message_id = send_challenge(update, context, user_id)
+            context.user_data[user_id] = message_id
+        except BadRequest as e:
+            logger.error(f'Failed to send challenge to user (ID: {user_id}): {e}')
+
+def challenge_response_handler(update: Update, context: CallbackContext):
+    user = update.message.from_user
+    user_id = user.id
+
+    if user_id not in PENDING_USERS:
+        return
+
+    message_id = context.user_data.get(user_id)
+
+    if message_id == update.message.reply_to_message.message_id:
+        handle_challenge_response(update, context, user_id, message_id)
 
 def error(update: Update, context: CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')
@@ -105,8 +109,8 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, bot_checker))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_language))
+    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member_handler))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.reply, challenge_response_handler))
     dp.add_error_handler(error)
 
     updater.start_polling()

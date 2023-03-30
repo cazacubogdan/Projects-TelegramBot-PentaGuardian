@@ -1,6 +1,6 @@
 import logging
-import re
-from telegram import Update, ForceReply
+import random
+from telegram import Update, ForceReply, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 import os
@@ -23,8 +23,12 @@ def save_ids_to_file(filename, ids):
         for id in ids:
             f.write(f'{id}\n')
 
-def get_challenge():
-    return "What is the result of 2 + 3?"
+def generate_challenge():
+    a = random.randint(1, 10)
+    b = random.randint(1, 10)
+    question = f"What is the result of {a} + {b}?"
+    answer = a + b
+    return question, answer
 
 API_KEY_FILE = '/app/Secrets/api_key_pentabot.txt'
 BOT_TOKEN = read_api_key(API_KEY_FILE)
@@ -49,17 +53,66 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text('Hi! I am PentaGuardian!')
 
 def send_challenge(update: Update, context: CallbackContext, user_id: int):
-    challenge = get_challenge()
-    message = context.bot.send_message(chat_id=user_id, text=challenge, reply_markup=ForceReply())
+    challenge, answer = generate_challenge()
+    message = context.bot.send_message(chat_id=update.message.chat.id, text=challenge, reply_markup=ForceReply(selective=True))
+    context.user_data[user_id] = {'message_id': message.message_id, 'answer': answer}
     return message.message_id
 
-def handle_challenge_response(update: Update, context: CallbackContext, user_id: int, message_id: int):
-    response = update.message.text.strip()
+def challenge_response_handler(update: Update, context: CallbackContext):
+    user = update.message.from_user
+    user_id = user.id
 
-    if response == "5":
-        # Correct answer, remove user from pending users list
+    if user_id not in PENDING_USERS:
+        return
+
+    user_data = context.user_data.get(user_id)
+    if user_data and user_data['message_id'] == update.message.reply_to_message.message_id:
+        handle_challenge_response(update, context, user_id)
+
+def new_member_handler(update: Update, context: CallbackContext):
+    for user in update.message.new_chat_members:
+        user_id = user.id
+
+        if user_id in ID_EXCEPTIONS or user_id in BAN_LIST:
+            continue
+        PENDING_USERS.add(user_id)
+        save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
+
+        # Restrict the new user's permissions
+        chat_id = update.message.chat.id
+        bot = context.bot
+        restricted_perms = ChatPermissions(can_send_messages=False)
+        bot.restrict_chat_member(chat_id, user_id, restricted_perms)
+
+        # Send the challenge to the new user
+        try:
+            send_challenge(update, context, user_id)
+        except BadRequest as e:
+            logger.error(f'Failed to send challenge to user (ID: {user_id}): {e}')
+
+def handle_challenge_response(update: Update, context: CallbackContext, user_id: int):
+    response = update.message.text.strip()
+    user_data = context.user_data.get(user_id)
+
+    if user_data and response == str(user_data['answer']):
+        # Correct answer, remove user from pending users list and lift restrictions
         PENDING_USERS.discard(user_id)
         save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
+
+        chat_id = update.message.chat.id
+        bot = context.bot
+        full_perms = ChatPermissions(
+            can_send_messages=True,
+            can_send_media_messages=True,
+            can_send_polls=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False,
+            can_change_info=False,
+            can_invite_users=True,
+            can_pin_messages=False,
+        )
+        bot.restrict_chat_member(chat_id, user_id, full_perms)
+
     else:
         # Incorrect answer or non-human response, ban the user
         chat_id = update.message.chat.id
@@ -71,34 +124,6 @@ def handle_challenge_response(update: Update, context: CallbackContext, user_id:
             logger.info(f'Banned user (ID: {user_id}) for incorrect challenge response in chat_id {chat_id}')
         except BadRequest as e:
             logger.error(f'Failed to ban user (ID: {user_id}) in chat_id {chat_id}: {e}')
-
-def new_member_handler(update: Update, context: CallbackContext):
-    for user in update.message.new_chat_members:
-        user_id = user.id
-
-        if user_id in ID_EXCEPTIONS or user_id in BAN_LIST:
-            continue
-        PENDING_USERS.add(user_id)
-        save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
-
-        # Send the challenge to the new user
-        try:
-            message_id = send_challenge(update, context, user_id)
-            context.user_data[user_id] = message_id
-        except BadRequest as e:
-            logger.error(f'Failed to send challenge to user (ID: {user_id}): {e}')
-
-def challenge_response_handler(update: Update, context: CallbackContext):
-    user = update.message.from_user
-    user_id = user.id
-
-    if user_id not in PENDING_USERS:
-        return
-
-    message_id = context.user_data.get(user_id)
-
-    if message_id == update.message.reply_to_message.message_id:
-        handle_challenge_response(update, context, user_id, message_id)
 
 def error(update: Update, context: CallbackContext):
     logger.error(f'Update {update} caused error {context.error}')

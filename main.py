@@ -4,6 +4,7 @@ from telegram import Update, ForceReply, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 import os
+from langdetect import detect_langs
 
 def read_api_key(filename):
     with open(filename, 'r') as f:
@@ -49,6 +50,8 @@ BAN_LIST = load_ids_from_file(BAN_LIST_FILE)
 ID_EXCEPTIONS = load_ids_from_file(EXCEPTIONS_LIST_FILE)
 PENDING_USERS = load_ids_from_file(PENDING_USERS_FILE)
 
+ALLOWED_LANGUAGES = {'en'}
+
 def start(update: Update, context: CallbackContext):
     update.message.reply_text('Hi! I am PentaGuardian!')
 
@@ -69,26 +72,39 @@ def challenge_response_handler(update: Update, context: CallbackContext):
     if user_data and user_data['message_id'] == update.message.reply_to_message.message_id:
         handle_challenge_response(update, context, user_id)
 
+def language_checker(update: Update, context: CallbackContext):
+    message_text = update.message.text
+    detected_languages = detect_langs(message_text)
+    for lang in detected_languages:
+        if lang.lang in ALLOWED_LANGUAGES:
+            return
+    update.message.reply_text("Sorry, only English messages are allowed in this chat.")
+
 def new_member_handler(update: Update, context: CallbackContext):
     for user in update.message.new_chat_members:
         user_id = user.id
 
+        # Bot checker
+        if user.is_bot:
+            context.bot.kick_chat_member(update.message.chat.id, user_id)
+            continue
+
         if user_id in ID_EXCEPTIONS or user_id in BAN_LIST:
             continue
-        PENDING_USERS.add(user_id)
+
         save_ids_to_file(PENDING_USERS_FILE, PENDING_USERS)
 
-        # Restrict the new user's permissions
-        chat_id = update.message.chat.id
-        bot = context.bot
-        restricted_perms = ChatPermissions(can_send_messages=True)
-        bot.restrict_chat_member(chat_id, user_id, restricted_perms)
+    # Restrict the new user's permissions
+    chat_id = update.message.chat.id
+    bot = context.bot
+    restricted_perms = ChatPermissions(can_send_messages=True)
+    bot.restrict_chat_member(chat_id, user_id, restricted_perms)
 
-        # Send the challenge to the new user
-        try:
-            send_challenge(update, context, user_id)
-        except BadRequest as e:
-            logger.error(f'Failed to send challenge to user (ID: {user_id}): {e}')
+    # Send the challenge to the new user
+    try:
+        send_challenge(update, context, user_id)
+    except BadRequest as e:
+        logger.error(f'Failed to send challenge to user (ID: {user_id}): {e}')
 
 def handle_challenge_response(update: Update, context: CallbackContext, user_id: int):
     response = update.message.text.strip()
@@ -136,10 +152,11 @@ def main():
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member_handler))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.reply, challenge_response_handler))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, language_checker))
     dp.add_error_handler(error)
 
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
+if name == 'main':
     main()

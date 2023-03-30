@@ -81,7 +81,7 @@ def new_member_handler(update: Update, context: CallbackContext):
         # Restrict the new user's permissions
         chat_id = update.message.chat.id
         bot = context.bot
-        restricted_perms = ChatPermissions(can_send_messages=False)
+        restricted_perms = ChatPermissions(can_send_messages=True)
         bot.restrict_chat_member(chat_id, user_id, restricted_perms)
 
         # Send the challenge to the new user

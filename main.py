@@ -62,6 +62,7 @@ TIMEFRAME = 10  # seconds
 WARN_TIMEFRAME = 86400  # seconds
 WARNINGS_BEFORE_BAN = 1
 SPAM_LIMIT = 3
+MAX_MESSAGES_PER_10_SECONDS = 5
 
 # Load the user data from file, if available
 try:

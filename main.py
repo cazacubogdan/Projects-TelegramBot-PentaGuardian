@@ -48,7 +48,8 @@ dispatcher = updater.dispatcher
 # Define the global variables and constants
 USER_DATA_FILE = "user_data.json"
 EXCEPTIONS_FILE = "exceptions.json"
-LAST_MESSAGES_FILE = "last_messages.json"
+#LAST_MESSAGES_FILE = "last_messages.json"
+last_messages_file = {}
 NO_LINKS_MESSAGE = "Posting links is not allowed in this group."
 NO_SPAM_MESSAGE = "Sending too many messages too quickly is not allowed in this group."
 ENGLISH_ONLY_MESSAGE = "Please speak English in this group as it is the only language accepted."

@@ -164,10 +164,10 @@ def check_no_spam(update, context):
             return
 
         # Check if the user has sent too many messages in the last 10 seconds
-        last_messages = last_messages_data.get(user_id, [])
+        last_messages = last_messages_file.get(user_id, [])
         last_messages.append(timestamp)
         last_messages = [t for t in last_messages if timestamp - t < 10]
-        last_messages_data[user_id] = last_messages
+        last_messages_file[user_id] = last_messages
 
         if len(last_messages) > MAX_MESSAGES_PER_10_SECONDS:
             context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)

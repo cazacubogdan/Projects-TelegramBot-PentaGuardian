@@ -12,9 +12,9 @@ with open('/app/Secrets/api_key_pentabot.txt') as f:
 # Enable logging
 #logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-=========================================================
+#=========================================================
 #debug
-=========================================================
+#=========================================================
 
 # Create a logger object
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
-=========================================================
+#=========================================================
 
 # Initialize the updater and dispatcher
 updater = Updater(api_key, use_context=True)
@@ -95,7 +95,7 @@ def save_last_messages():
         json.dump(last_messages, f)
 
 
-===#debug
+#===#debug
 # Define the check_new_members handler with logging statements
 def check_new_members(update, context):
     logger.info("New member joined the group")
@@ -110,7 +110,7 @@ def check_new_members(update, context):
 
     save_user_data()
     logger.debug("User data saved to file")
-===
+#===
 # def check_new_members(update, context):
 #     # Log a message to confirm that the handler is being triggered
 #     logger.info("New member joined the group")
@@ -130,7 +130,7 @@ def check_new_members(update, context):
 
 #     # Save the user data to file
 #     save_user_data()
-===
+#===
 
 def check_no_links(update, context):
     user_id = update.effective_user.id
@@ -150,7 +150,7 @@ def check_no_links(update, context):
             else:
                 update.message.reply_text(WARNING_MESSAGE)
             save_user_data()
-===#debug
+#===#debug
 # Define the check_no_spam handler with logging statements
 def check_no_spam(update, context):
     user_id = update.message.from_user.id
@@ -202,7 +202,7 @@ def check_no_spam(update, context):
 #                     update.message.reply_text(WARNING_MESSAGE)
 #             save_user_data()
 #     save_last_messages()
-===
+#===
 def check_english_only(update, context):
     user_id = update.effective_user.id
     if user_id in exceptions:

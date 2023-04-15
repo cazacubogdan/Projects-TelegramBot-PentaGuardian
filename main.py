@@ -10,7 +10,36 @@ with open('/app/Secrets/api_key_pentabot.txt') as f:
     api_key = f.read().strip()
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+#logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+=========================================================
+#debug
+=========================================================
+
+# Create a logger object
+logger = logging.getLogger(__name__)
+
+# Set the logging level to DEBUG
+logger.setLevel(logging.DEBUG)
+
+# Create a file handler to save the logs to a file
+file_handler = logging.FileHandler('bot.log')
+file_handler.setLevel(logging.DEBUG)
+
+# Create a stream handler to output the logs to the console
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+
+# Define the log message format
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+
+# Add the handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+
+=========================================================
 
 # Initialize the updater and dispatcher
 updater = Updater(api_key, use_context=True)
@@ -65,15 +94,43 @@ def save_last_messages():
     with open(LAST_MESSAGES_FILE, "w") as f:
         json.dump(last_messages, f)
 
+
+===#debug
+# Define the check_new_members handler with logging statements
 def check_new_members(update, context):
+    logger.info("New member joined the group")
+
     for member in update.message.new_chat_members:
-        if member.is_bot:
-            update.message.reply_text("01010011 01101111 01110010 01110010 01111001 00101100 00100000 01100010 01101111 01110100 01110011 00100000 01100001 01110010 01100101 00100000 01101110 01101111 01110100 00100000 01100001 01101100 01101100 01101111 01110111 01100101 01100100 00100000 01101001 01101110 00100000 01110100 01101000 01101001 01110011 00100000 01100111 01110010 01101111 01110101 01110000 00101110")
-            context.bot.kick_chat_member(update.message.chat_id, member.id)
-        else:
-            context.user_data[member.id] = {'last_message_timestamp': 0}
-            challenge_message = f"Welcome, {member.first_name}! Please solve this math operation: {random.randint(0, 10)} + {random.randint(0, 10)}"
-            update.message.reply_text(challenge_message)
+        challenge_message = "Welcome, please solve this math operation: {} + {}".format(random.randint(0, 10), random.randint(0, 10))
+        context.bot.send_message(chat_id=update.message.chat_id, text=challenge_message, reply_to_message_id=update.message.message_id)
+        logger.info("Challenge message sent to new member: %s", challenge_message)
+
+        user_data[member.id] = {"last_challenge_timestamp": int(time.time()), "is_bot": member.is_bot}
+        logger.debug("User data saved for member %d: %s", member.id, user_data[member.id])
+
+    save_user_data()
+    logger.debug("User data saved to file")
+===
+# def check_new_members(update, context):
+#     # Log a message to confirm that the handler is being triggered
+#     logger.info("New member joined the group")
+
+#     for member in update.message.new_chat_members:
+#         if member.is_bot:
+#             update.message.reply_text("01010011 01101111 01110010 01110010 01111001 00101100 00100000 01100010 01101111 01110100 01110011 00100000 01100001 01110010 01100101 00100000 01101110 01101111 01110100 00100000 01100001 01101100 01101100 01101111 01110111 01100101 01100100 00100000 01101001 01101110 00100000 01110100 01101000 01101001 01110011 00100000 01100111 01110010 01101111 01110101 01110000 00101110")
+#             context.bot.kick_chat_member(update.message.chat_id, member.id)
+#         else:
+#         # Send the challenge message to the new member and log a message to confirm
+#         challenge_message = "Welcome, please solve this math operation: {} + {}".format(random.randint(0, 10), random.randint(0, 10))
+#         context.bot.send_message(chat_id=update.message.chat_id, text=challenge_message, reply_to_message_id=update.message.message_id)
+#         logger.info("Challenge message sent to new member: %s", challenge_message)
+
+#         # Save the user data for the new member
+#         user_data[member.id] = {"last_challenge_timestamp": int(time.time()), "is_bot": member.is_bot}
+
+#     # Save the user data to file
+#     save_user_data()
+===
 
 def check_no_links(update, context):
     user_id = update.effective_user.id
@@ -93,35 +150,59 @@ def check_no_links(update, context):
             else:
                 update.message.reply_text(WARNING_MESSAGE)
             save_user_data()
-
+===#debug
+# Define the check_no_spam handler with logging statements
 def check_no_spam(update, context):
-    user_id = update.effective_user.id
+    user_id = update.message.from_user.id
+    timestamp = int(time.time())
+
+    # Check if the user is exempt from spam checking
     if user_id in exceptions:
         return
-    if user_id not in last_messages:
-        last_messages[user_id] = {"times": [int(time.time())]}
-    else:
-        times = last_messages[user_id]["times"]
-        times.append(int(time.time()))
-        while len(times) > SPAM_LIMIT:
-            times.pop(0)
-        last_messages[user_id]["times"] = times
-        if times[-1] - times[0] < TIMEFRAME:
-            update.message.reply_text(NO_SPAM_MESSAGE)
-            if user_id not in user_data:
-                user_data[user_id] = {"warnings": 1, "banned": False, "last_warning_timestamp": int(time.time())}
-            else:
-                user_data[user_id]["warnings"] += 1
-                if user_data[user_id]["warnings"] > WARNINGS_BEFORE_BAN:
-                    if not user_data[user_id]["banned"]:
-                        context.bot.kick_chat_member(update.message.chat_id, user_id)
-                        user_data[user_id]["banned"] = True
-                        update.message.reply_text(BAN_MESSAGE)
-                else:
-                    update.message.reply_text(WARNING_MESSAGE)
-            save_user_data()
-    save_last_messages()
 
+    # Check if the user has sent too many messages in the last 10 seconds
+    last_messages = last_messages_data.get(user_id, [])
+    last_messages.append(timestamp)
+    last_messages = [t for t in last_messages if timestamp - t < 10]
+    last_messages_data[user_id] = last_messages
+
+    if len(last_messages) > MAX_MESSAGES_PER_10_SECONDS:
+        context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
+        logger.info("Message deleted due to spam: %s", update.message.text)
+    else:
+        logger.debug("Message allowed: %s", update.message.text)
+
+    save_last_messages()
+    logger.debug("Last messages data saved to file")
+# ===
+# def check_no_spam(update, context):
+#     user_id = update.effective_user.id
+#     if user_id in exceptions:
+#         return
+#     if user_id not in last_messages:
+#         last_messages[user_id] = {"times": [int(time.time())]}
+#     else:
+#         times = last_messages[user_id]["times"]
+#         times.append(int(time.time()))
+#         while len(times) > SPAM_LIMIT:
+#             times.pop(0)
+#         last_messages[user_id]["times"] = times
+#         if times[-1] - times[0] < TIMEFRAME:
+#             update.message.reply_text(NO_SPAM_MESSAGE)
+#             if user_id not in user_data:
+#                 user_data[user_id] = {"warnings": 1, "banned": False, "last_warning_timestamp": int(time.time())}
+#             else:
+#                 user_data[user_id]["warnings"] += 1
+#                 if user_data[user_id]["warnings"] > WARNINGS_BEFORE_BAN:
+#                     if not user_data[user_id]["banned"]:
+#                         context.bot.kick_chat_member(update.message.chat_id, user_id)
+#                         user_data[user_id]["banned"] = True
+#                         update.message.reply_text(BAN_MESSAGE)
+#                 else:
+#                     update.message.reply_text(WARNING_MESSAGE)
+#             save_user_data()
+#     save_last_messages()
+===
 def check_english_only(update, context):
     user_id = update.effective_user.id
     if user_id in exceptions:
@@ -158,9 +239,16 @@ def unban_user(update, context):
 
 # Define the handlers and add them to the dispatcher
 dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, check_new_members))
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.chat_type.groups, check_english_only))
-dispatcher.add_handler(MessageHandler(Filters.text & Filters.entity('url') & Filters.chat_type.groups, check_no_links))
-dispatcher.add_handler(MessageHandler(Filters.text & Filters.chat_type.groups, check_no_spam))
+
+# Comment out the check_english_only handler
+# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.chat_type.groups, check_english_only))
+
+# Comment out the check_no_links handler
+# dispatcher.add_handler(MessageHandler(Filters.text & Filters.entity('url') & Filters.chat_type.groups, check_no_links))
+
+# Comment out the check_no_spam handler
+# dispatcher.add_handler(MessageHandler(Filters.text & Filters.chat_type.groups, check_no_spam))
+
 dispatcher.add_handler(CommandHandler('unban', unban_user))
 
 # Start the bot

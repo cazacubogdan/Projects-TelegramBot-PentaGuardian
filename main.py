@@ -158,9 +158,9 @@ def unban_user(update, context):
 
 # Define the handlers and add them to the dispatcher
 dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, check_new_members))
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.group, check_english_only))
-dispatcher.add_handler(MessageHandler(Filters.text & Filters.entity('url') & Filters.group, check_no_links))
-dispatcher.add_handler(MessageHandler(Filters.text & Filters.group, check_no_spam))
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & Filters.chat_type.groups, check_english_only))
+dispatcher.add_handler(MessageHandler(Filters.text & Filters.entity('url') & Filters.chat_type.groups, check_no_links))
+dispatcher.add_handler(MessageHandler(Filters.text & Filters.chat_type.groups, check_no_spam))
 dispatcher.add_handler(CommandHandler('unban', unban_user))
 
 # Start the bot

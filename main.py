@@ -35,21 +35,21 @@ SPAM_LIMIT = 3
 try:
     with open(USER_DATA_FILE, "r") as f:
         user_data = json.load(f)
-except FileNotFoundError:
+except (FileNotFoundError, json.JSONDecodeError):
     user_data = {}
 
 # Load the exceptions list from file, if available
 try:
     with open(EXCEPTIONS_FILE, "r") as f:
         exceptions = json.load(f)
-except FileNotFoundError:
+except (FileNotFoundError, json.JSONDecodeError):
     exceptions = []
 
 # Load the last messages data from file, if available
 try:
     with open(LAST_MESSAGES_FILE, "r") as f:
         last_messages = json.load(f)
-except FileNotFoundError:
+except (FileNotFoundError, json.JSONDecodeError):
     last_messages = {}
 
 # Define the helper functions

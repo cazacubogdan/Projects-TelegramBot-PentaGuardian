@@ -83,7 +83,7 @@ def load_exceptions():
 def load_last_messages():
     try:
         with open(LAST_MESSAGES_FILE, "r") as f:
-            rturn json.load(f)
+            return json.load(f)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         return []
 

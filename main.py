@@ -78,11 +78,12 @@ except (FileNotFoundError, json.JSONDecodeError):
     exceptions = []
 
 # Load the last messages data from file, if available
-try:
-    with open(LAST_MESSAGES_FILE, "r") as f:
-        last_messages = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    last_messages = {}
+def load_last_messages():
+    if os.path.exists(LAST_MESSAGES_FILE):
+        with open(LAST_MESSAGES_FILE, "r") as f:
+            return json.load(f)
+    else:
+        return {}
 
 # Define the helper functions
 def save_user_data():

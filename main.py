@@ -97,8 +97,7 @@ def save_exceptions():
 
 def save_last_messages():
     with open(LAST_MESSAGES_FILE, "w") as f:
-        json.dump(last_messages, f)
-
+        json.dump(LAST_MESSAGES_FILE, f)
 
 #===#debug
 # Define the check_new_members handler with logging statements

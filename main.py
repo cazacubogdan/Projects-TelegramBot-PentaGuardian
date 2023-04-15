@@ -49,6 +49,8 @@ dispatcher = updater.dispatcher
 USER_DATA_FILE = "user_data.json"
 EXCEPTIONS_FILE = "exceptions.json"
 LAST_MESSAGES_FILE = "last_messages.json"
+if not isinstance(LAST_MESSAGES_FILE, dict):
+    LAST_MESSAGES_FILE = {}
 #last_messages_file = {}
 NO_LINKS_MESSAGE = "Posting links is not allowed in this group."
 NO_SPAM_MESSAGE = "Sending too many messages too quickly is not allowed in this group."
@@ -164,7 +166,7 @@ def check_no_spam(update, context):
         if user_id in exceptions:
             return
 
-        # Check if the user has sent too many messages in the last 10 seconds
+        # Check if the user has sent too many messages in the last # seconds
         last_messages = LAST_MESSAGES_FILE.get(user_id, [])
         last_messages.append(timestamp)
         last_messages = [t for t in last_messages if timestamp - t < 10]

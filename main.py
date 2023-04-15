@@ -153,27 +153,32 @@ def check_no_links(update, context):
 #===#debug
 # Define the check_no_spam handler with logging statements
 def check_no_spam(update, context):
-    user_id = update.message.from_user.id
-    timestamp = int(time.time())
+    logger.info("Message received: %s", update.message.text)
 
-    # Check if the user is exempt from spam checking
-    if user_id in exceptions:
-        return
+    try:
+        user_id = update.message.from_user.id
+        timestamp = int(time.time())
 
-    # Check if the user has sent too many messages in the last 10 seconds
-    last_messages = last_messages_data.get(user_id, [])
-    last_messages.append(timestamp)
-    last_messages = [t for t in last_messages if timestamp - t < 10]
-    last_messages_data[user_id] = last_messages
+        # Check if the user is exempt from spam checking
+        if user_id in exceptions:
+            return
 
-    if len(last_messages) > MAX_MESSAGES_PER_10_SECONDS:
-        context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
-        logger.info("Message deleted due to spam: %s", update.message.text)
-    else:
-        logger.debug("Message allowed: %s", update.message.text)
+        # Check if the user has sent too many messages in the last 10 seconds
+        last_messages = last_messages_data.get(user_id, [])
+        last_messages.append(timestamp)
+        last_messages = [t for t in last_messages if timestamp - t < 10]
+        last_messages_data[user_id] = last_messages
 
-    save_last_messages()
-    logger.debug("Last messages data saved to file")
+        if len(last_messages) > MAX_MESSAGES_PER_10_SECONDS:
+            context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)
+            logger.info("Message deleted due to spam: %s", update.message.text)
+        else:
+            logger.debug("Message allowed: %s", update.message.text)
+
+        save_last_messages()
+        logger.debug("Last messages data saved to file")
+    except Exception as e:
+        logger.error("Error in check_no_spam handler: %s", e)
 # ===
 # def check_no_spam(update, context):
 #     user_id = update.effective_user.id
@@ -237,6 +242,14 @@ def unban_user(update, context):
         user_data[user_id]["warnings"] = 0
         save_user_data()
 
+#===
+#debug
+#===
+# Create a handler to handle errors
+def error_handler(update, context):
+    logger.error("An error occurred: %s", context.error)
+#===
+
 # Define the handlers and add them to the dispatcher
 dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, check_new_members))
 
@@ -250,6 +263,8 @@ dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, ch
 # dispatcher.add_handler(MessageHandler(Filters.text & Filters.chat_type.groups, check_no_spam))
 
 dispatcher.add_handler(CommandHandler('unban', unban_user))
+
+dispatcher.add_error_handler(error_handler)
 
 # Start the bot
 updater.start_polling()

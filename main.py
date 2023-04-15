@@ -77,7 +77,7 @@ def load_exceptions():
         with open(EXCEPTIONS_FILE, "r") as f:
             return json.load(f)
     else:
-        return {}
+        return EXCEPTIONS_FILE
 
 # Load the last messages data from file, if available
 def load_last_messages():

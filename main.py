@@ -72,11 +72,12 @@ except (FileNotFoundError, json.JSONDecodeError):
     user_data = {}
 
 # Load the exceptions list from file, if available
-try:
-    with open(EXCEPTIONS_FILE, "r") as f:
-        exceptions = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    exceptions = []
+def load_exceptions():
+    if os.path.exists(EXCEPTIONS_FILE):
+        with open(EXCEPTIONS_FILE, "r") as f:
+            return json.load(f)
+    else:
+        return {}
 
 # Load the last messages data from file, if available
 def load_last_messages():

@@ -48,8 +48,8 @@ dispatcher = updater.dispatcher
 # Define the global variables and constants
 USER_DATA_FILE = "user_data.json"
 EXCEPTIONS_FILE = "exceptions.json"
-#LAST_MESSAGES_FILE = "last_messages.json"
-last_messages_file = {}
+LAST_MESSAGES_FILE = "last_messages.json"
+#last_messages_file = {}
 NO_LINKS_MESSAGE = "Posting links is not allowed in this group."
 NO_SPAM_MESSAGE = "Sending too many messages too quickly is not allowed in this group."
 ENGLISH_ONLY_MESSAGE = "Please speak English in this group as it is the only language accepted."
@@ -165,10 +165,10 @@ def check_no_spam(update, context):
             return
 
         # Check if the user has sent too many messages in the last 10 seconds
-        last_messages = last_messages_file.get(user_id, [])
+        last_messages = LAST_MESSAGES_FILE.get(user_id, [])
         last_messages.append(timestamp)
         last_messages = [t for t in last_messages if timestamp - t < 10]
-        last_messages_file[user_id] = last_messages
+        LAST_MESSAGES_FILE[user_id] = last_messages
 
         if len(last_messages) > MAX_MESSAGES_PER_10_SECONDS:
             context.bot.delete_message(chat_id=update.message.chat_id, message_id=update.message.message_id)

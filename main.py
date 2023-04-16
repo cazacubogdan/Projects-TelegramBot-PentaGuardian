@@ -64,6 +64,12 @@ WARNINGS_BEFORE_BAN = 1
 SPAM_LIMIT = 3
 MAX_MESSAGES_PER_10_SECONDS = 5
 
+#===
+#debug
+#===
+exceptions = load_exceptions()
+#===
+
 # Load the user data from file, if available
 try:
     with open(USER_DATA_FILE, "r") as f:

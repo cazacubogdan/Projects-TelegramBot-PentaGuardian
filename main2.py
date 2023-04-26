@@ -13,6 +13,7 @@ from langdetect import detect
 # 5. Bans users who fail to answer the math challenge correctly, or send non-human responses.
 # 6. Stores banned user IDs in a file for persistent storage across bot restarts.
 # 7. Sets up logging to a file for debugging purposes and have the posibility to chose various logging levels.
+# 8. Send a private message to the user getting banned containing the reason of the ban and at the same time to post a message on the group saying what user has been banned and why
 
 # Read API key from file
 with open("/app/Secrets/api_key_pentabot.txt", "r") as file:
@@ -38,9 +39,8 @@ def on_new_member(update: Update, context: CallbackContext):
     new_members = update.message.new_chat_members
     for member in new_members:
         if member.is_bot:
-            context.bot.ban_chat_member(update.effective_chat.id, member.id)
+            ban_user(member.id, update.effective_chat.id, "Bot detected", context)
             continue
-
         
         # Generate a math challenge
         question, answer = generate_math_challenge()
@@ -79,7 +79,17 @@ def on_message(update: Update, context: CallbackContext):
         context.bot.restrict_chat_member(
             update.effective_chat.id,
             user_id,
-            ChatPermissions(can_send_messages=True, can_read_messages=True)
+            ChatPermissions(
+                can_send_messages=True,
+                can_send_media_messages=True,
+                can_send_polls=False,
+                can_send_other_messages=False,
+                can_add_web_page_previews=False,
+                can_change_info=False,
+                can_invite_users=True,
+                can_pin_messages=False,
+                can_read_messages=True
+            )
         )
 
         # Remove the user's answer from user_data
@@ -94,10 +104,50 @@ def on_message(update: Update, context: CallbackContext):
             pass
 
     else:
-        # Ban the user and store their ID in a file
-        context.bot.ban_chat_member(update.effective_chat.id, user_id)
+        # 
+        ban_reason = "Failed to answer the math challenge correctly or non-human response"
+        ban_user(user_id, update.effective_chat.id, ban_reason, context)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
+
+
+def check_english(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    # If the user is in user_data, they have not completed the challenge yet
+    if user_id in context.user_data:
+        return
+
+    try:
+        language = detect(update.message.text)
+        if language != 'en':
+            # 
+            ban_reason = "Non-English message"
+            ban_user(user_id, update.effective_chat.id, ban_reason, context)
+            with open("banned_users.txt", "a") as file:
+                file.write(f"{user_id}\n")
+            update.message.delete()
+    except:
+        pass
+
+def ban_user(user_id, chat_id, ban_reason, context: CallbackContext):
+    # Ban the user
+    context.bot.ban_chat_member(chat_id, user_id)
+
+    # Send a private message to the user
+    try:
+        context.bot.send_message(
+            chat_id=user_id,
+            text=f"You have been banned from the group due to: {ban_reason}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to send private message to banned user: {e}")
+
+    # Post a message in the group
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=f"User with ID {user_id} has been banned due to: {ban_reason}"
+    )
 
 def main():
     updater = Updater(api_key)
@@ -105,6 +155,7 @@ def main():
     # Register handlers
     updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, on_new_member))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, on_message))
+    updater.dispatcher.add_handler(MessageHandler(Filters.text, check_english))
 
     updater.start_polling()
     updater.idle()

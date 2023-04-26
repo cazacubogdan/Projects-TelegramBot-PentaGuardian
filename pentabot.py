@@ -65,7 +65,7 @@ def on_message(update: Update, context: CallbackContext):
 
     # If the user is not in user_data, they have not been challenged yet
     if user_id not in context.user_data:
-        # check_english(update, context)  # Comment this line to disable check_english
+        # check_english(update, context)  # Uncomment this line
         return
 
     # Check if the answer is correct
@@ -95,18 +95,16 @@ def on_message(update: Update, context: CallbackContext):
         # Remove the user's answer from user_data
         del context.user_data[user_id]
 
-        # Check if the message is in English
-        # check_english(update, context)  # Comment this line to disable check_english
+        # check_english(update, context)  # Uncomment this line
 
     else:
-        # 
         ban_reason = "Failed to answer the math challenge correctly or non-human response"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
-    check_spam(update, context)  # Comment this line to disable check_spam
-    check_links(update, context)
+    check_spam(update, context)  # Uncomment this line
+    check_links(update, context)  # Uncomment this line
 
 def check_english(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -165,7 +163,7 @@ def check_spam(update: Update, context: CallbackContext):
     current_time = time.time()
     time_difference = current_time - context.user_data['last_message_time'][user_id]
 
-    if time_difference < 3:  # Adjust the time threshold for spamming as needed
+    if time_difference < 5:  # Adjust the time threshold for spamming as needed
         ban_reason = "Spamming"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
 
@@ -192,7 +190,6 @@ def main():
     # Register handlers
     updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, on_new_member))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, on_message))
-    updater.dispatcher.add_handler(MessageHandler(Filters.text, check_english))
 
     updater.start_polling()
     updater.idle()

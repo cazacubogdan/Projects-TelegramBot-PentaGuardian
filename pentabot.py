@@ -75,7 +75,7 @@ def on_message(update: Update, context: CallbackContext):
 
     # If the user is not in user_data, they have not been challenged yet
     if user_id not in context.user_data:
-        check_english(update, context)
+        # check_english(update, context)  # Comment this line to disable check_english
         return
 
     # Check if the answer is correct
@@ -106,7 +106,7 @@ def on_message(update: Update, context: CallbackContext):
         del context.user_data[user_id]
 
         # Check if the message is in English
-        check_english(update, context)
+        # check_english(update, context)  # Comment this line to disable check_english
 
     else:
         # 
@@ -115,7 +115,7 @@ def on_message(update: Update, context: CallbackContext):
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
-    check_spam(update, context)
+    # check_spam(update, context)  # Comment this line to disable check_spam
     check_links(update, context)
 
 def check_english(update: Update, context: CallbackContext):
@@ -175,7 +175,7 @@ def check_spam(update: Update, context: CallbackContext):
     current_time = time.time()
     time_difference = current_time - context.user_data['last_message_time'][user_id]
 
-    if time_difference < 5:  # Adjust the time threshold for spamming as needed
+    if time_difference < 1:  # Adjust the time threshold for spamming as needed
         ban_reason = "Spamming"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
 
@@ -192,6 +192,7 @@ def check_links(update: Update, context: CallbackContext):
     links = re.findall(link_pattern, message_text)
 
     if len(links) > 0:
+        update.message.delete()  # Delete the message containing the link(s)
         ban_reason = "Sending links"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
 

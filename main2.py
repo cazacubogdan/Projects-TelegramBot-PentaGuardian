@@ -47,10 +47,10 @@ def on_new_member(update: Update, context: CallbackContext):
         # Store the correct answer in user_data
         context.user_data[member.id] = {"answer": answer}
 
-        # Send the math challenge to the new member
+        # Send the math challenge to the group chat
         context.bot.send_message(
-            chat_id=member.id,
-            text=f"Welcome! Please answer the following math question to join the group: {question}"
+            chat_id=update.effective_chat.id,
+            text=f"Welcome, {member.first_name}! Please answer the following math question to join the group: {question}"
         )
 
         # Restrict the new user

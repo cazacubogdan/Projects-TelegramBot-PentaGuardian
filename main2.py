@@ -95,13 +95,13 @@ def on_message(update: Update, context: CallbackContext):
         # Remove the user's answer from user_data
         del context.user_data[user_id]
 
-        # Check if the message is in English
-        try:
-            language = detect(update.message.text)
-            if language != 'en':
-                update.message.delete()
-        except:
-            pass
+        # # Check if the message is in English
+        # try:
+        #     language = detect(update.message.text)
+        #     if language != 'en':
+        #         update.message.delete()
+        # except:
+        #     pass
 
     else:
         # 

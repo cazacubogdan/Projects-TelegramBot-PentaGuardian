@@ -65,7 +65,7 @@ def on_message(update: Update, context: CallbackContext):
 
     # If the user is not in user_data, they have not been challenged yet
     if user_id not in context.user_data:
-        # check_english(update, context)  # Uncomment this line
+        check_english(update, context)
         return
 
     # Check if the answer is correct
@@ -93,18 +93,25 @@ def on_message(update: Update, context: CallbackContext):
         )
 
         # Remove the user's answer from user_data
-        del context.user_data[user_id]
+        del context.user_data[user_id]["answer"]
 
-        # check_english(update, context)  # Uncomment this line
+        # Set a flag to indicate that the user has completed the challenge
+        context.user_data[user_id]["challenge_completed"] = True
+
+        # Perform the check_spam and check_links after the challenge is complete
+        check_spam(update, context)
+        check_links(update, context)
 
     else:
         ban_reason = "Failed to answer the math challenge correctly or non-human response"
-        ban_user(user_id, update.effective_chat.id, ban_reason, context)
+        ban_user(update, user_id, update.effective_chat.id, ban_reason, context)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
-    check_spam(update, context)  # Uncomment this line
-    check_links(update, context)  # Uncomment this line
+    # If the user has completed the challenge, perform the check_spam and check_links
+    if user_id in context.user_data and context.user_data[user_id].get("challenge_completed"):
+        check_spam(update, context)
+        check_links(update, context)
 
 def check_english(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -125,7 +132,7 @@ def check_english(update: Update, context: CallbackContext):
     except:
         pass
 
-def ban_user(user_id, chat_id, ban_reason, context: CallbackContext):
+def ban_user(update, user_id, chat_id, ban_reason, context: CallbackContext):
     # Ban the user
     context.bot.ban_chat_member(chat_id, user_id)
 
@@ -146,6 +153,7 @@ def ban_user(user_id, chat_id, ban_reason, context: CallbackContext):
         chat_id=chat_id,
         text=f"User {user_info.first_name} has been banned due to: {ban_reason}"
     )
+    log_action(update, context, "banned", user_id, ban_reason)
 
 def check_spam(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -184,12 +192,33 @@ def check_links(update: Update, context: CallbackContext):
         ban_reason = "Sending links"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
 
+def unban_user(update: Update, context: CallbackContext):
+    if not update.message.from_user.is_chat_admin(update.effective_chat.id):
+        return
+    
+    try:
+        user_id = int(context.args[0])
+    except (ValueError, IndexError):
+        update.message.reply_text("Please provide a valid user ID.")
+        return
+
+    context.bot.unban_chat_member(update.effective_chat.id, user_id)
+    update.message.reply_text(f"User with ID {user_id} has been unbanned.")
+    log_action(update, context, "unbanned", user_id)
+
+def log_action(update: Update, context: CallbackContext, action: str, user_id: int, reason: str = None):
+    action_message = f"{update.message.from_user.first_name} {action} user with ID {user_id}"
+    if reason:
+        action_message += f" due to: {reason}"
+    logger.info(action_message)
+
 def main():
     updater = Updater(api_key)
 
     # Register handlers
     updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, on_new_member))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, on_message))
+    updater.dispatcher.add_handler(CommandHandler("unban", unban_user))
 
     updater.start_polling()
     updater.idle()

@@ -1,6 +1,8 @@
 import os
 import logging
 import random
+import re
+import time
 from telegram import Update, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from langdetect import detect
@@ -18,6 +20,13 @@ from langdetect import detect
 # Read API key from file
 with open("/app/Secrets/api_key_pentabot.txt", "r") as file:
     api_key = file.read().strip()
+
+with open("spam_exceptions.txt", "r") as file:
+    spam_exceptions = [line.strip() for line in file.readlines()]
+
+with open("links_exceptions.txt", "r") as file:
+    links_exceptions = [line.strip() for line in file.readlines()]
+
 
 # Set up logging
 logging.basicConfig(
@@ -106,6 +115,9 @@ def on_message(update: Update, context: CallbackContext):
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
+    check_spam(update, context)
+    check_links(update, context)
+
 def check_english(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
@@ -146,6 +158,42 @@ def ban_user(user_id, chat_id, ban_reason, context: CallbackContext):
         chat_id=chat_id,
         text=f"User {user_info.first_name} has been banned due to: {ban_reason}"
     )
+
+def check_spam(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    if str(user_id) in spam_exceptions:
+        return
+
+    if 'last_message_time' not in context.user_data:
+        context.user_data['last_message_time'] = {}
+
+    if user_id not in context.user_data['last_message_time']:
+        context.user_data['last_message_time'][user_id] = time.time()
+        return
+
+    current_time = time.time()
+    time_difference = current_time - context.user_data['last_message_time'][user_id]
+
+    if time_difference < 5:  # Adjust the time threshold for spamming as needed
+        ban_reason = "Spamming"
+        ban_user(user_id, update.effective_chat.id, ban_reason, context)
+
+    context.user_data['last_message_time'][user_id] = current_time
+
+def check_links(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    if str(user_id) in links_exceptions:
+        return
+
+    message_text = update.message.text
+    link_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    links = re.findall(link_pattern, message_text)
+
+    if len(links) > 0:
+        ban_reason = "Sending links"
+        ban_user(user_id, update.effective_chat.id, ban_reason, context)
 
 def main():
     updater = Updater(api_key)

@@ -165,7 +165,7 @@ def check_spam(update: Update, context: CallbackContext):
     current_time = time.time()
     time_difference = current_time - context.user_data['last_message_time'][user_id]
 
-    if time_difference < 1:  # Adjust the time threshold for spamming as needed
+    if time_difference < 3:  # Adjust the time threshold for spamming as needed
         ban_reason = "Spamming"
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
 

@@ -103,7 +103,7 @@ def on_message(update: Update, context: CallbackContext):
 
     else:
         ban_reason = "Failed to answer the math challenge correctly or non-human response"
-        ban_user(update, user_id, update.effective_chat.id, ban_reason, context)
+        ban_user(user_id, update.effective_chat.id, ban_reason, context)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
@@ -205,8 +205,8 @@ def unban_user(update: Update, context: CallbackContext):
     update.message.reply_text(f"User with ID {user_id} has been unbanned.")
     log_action(update.effective_chat.id, update.message.from_user.first_name, "unbanned", user_id)
 
-def log_action(chat_id: int, user_first_name: str, action: str, user_id: int, reason: str = None):
-    action_message = f"{user_first_name} {action} user with ID {user_id}"
+def log_action(chat_id, user_name, action: str, user_id: int, reason: str = None):
+    action_message = f"{user_name} {action} user with ID {user_id}"
     if reason:
         action_message += f" due to: {reason}"
     logger.info(action_message)

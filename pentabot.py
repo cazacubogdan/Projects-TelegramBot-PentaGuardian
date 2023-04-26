@@ -7,16 +7,6 @@ from telegram import Update, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from langdetect import detect
 
-# What would the code for a python telegram bot with the following requirements, would look like:
-# 1. Reads the Telegram bot API key from a file stored in /app/Secrets/api_key_pentabot.txt
-# 2. Kicks and bans bots.
-# 3. Generates a random math challenge and sends it to new users who join the channel. Restricts new users to prevent them from sending or seeing any group messages before answering the math challenge.
-# 4. Checks the language of messages sent in chat after the math challenge is complete, and only allows messages in English.
-# 5. Bans users who fail to answer the math challenge correctly, or send non-human responses.
-# 6. Stores banned user IDs in a file for persistent storage across bot restarts.
-# 7. Sets up logging to a file for debugging purposes and have the posibility to chose various logging levels.
-# 8. Send a private message to the user getting banned containing the reason of the ban and at the same time to post a message on the group saying what user has been banned and why
-
 # Read API key from file
 with open("/app/Secrets/api_key_pentabot.txt", "r") as file:
     api_key = file.read().strip()

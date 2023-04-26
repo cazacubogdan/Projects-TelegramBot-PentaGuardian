@@ -129,10 +129,22 @@ def ban_user(user_id, chat_id, ban_reason, context: CallbackContext):
     # Ban the user
     context.bot.ban_chat_member(chat_id, user_id)
 
+    # Get user info for the banned user
+    user_info = context.bot.get_chat_member(chat_id, user_id).user
+
+    # Send a private message to the user
+    try:
+        context.bot.send_message(
+            chat_id=user_id,
+            text=f"You have been banned from the group due to: {ban_reason}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to send private message to banned user: {e}")
+
     # Post a message in the group
     context.bot.send_message(
         chat_id=chat_id,
-        text=f"User {member.first_name} has been banned due to: {ban_reason}"
+        text=f"User {user_info.first_name} has been banned due to: {ban_reason}"
     )
 
 def main():

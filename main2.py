@@ -38,8 +38,9 @@ def on_new_member(update: Update, context: CallbackContext):
     new_members = update.message.new_chat_members
     for member in new_members:
         if member.is_bot:
-            context.bot.kick_chat_member(update.effective_chat.id, member.id)
+            context.bot.ban_chat_member(update.effective_chat.id, member.id)
             continue
+
         
         # Generate a math challenge
         question, answer = generate_math_challenge()
@@ -94,7 +95,7 @@ def on_message(update: Update, context: CallbackContext):
 
     else:
         # Ban the user and store their ID in a file
-        context.bot.kick_chat_member(update.effective_chat.id, user_id)
+        context.bot.ban_chat_member(update.effective_chat.id, user_id)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 

@@ -98,10 +98,6 @@ def on_message(update: Update, context: CallbackContext):
         # Set a flag to indicate that the user has completed the challenge
         context.user_data[user_id]["challenge_completed"] = True
 
-        # Perform the check_spam and check_links after the challenge is complete
-        check_spam(update, context)
-        check_links(update, context)
-
     else:
         ban_reason = "Failed to answer the math challenge correctly or non-human response"
         ban_user(update, user_id, update.effective_chat.id, ban_reason, context)

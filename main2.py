@@ -53,11 +53,11 @@ def on_new_member(update: Update, context: CallbackContext):
             text=f"Welcome, {member.first_name}! Please answer the following math question to join the group: {question}"
         )
 
-        # Restrict the new user
+        # Restrict the new user but allow them to send messages
         context.bot.restrict_chat_member(
             update.effective_chat.id,
             member.id,
-            ChatPermissions()
+            ChatPermissions(can_send_messages=True)
         )
 
 def on_message(update: Update, context: CallbackContext):

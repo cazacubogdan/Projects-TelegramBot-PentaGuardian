@@ -1,3 +1,4 @@
 /app/Secrets/api_key_pentabot.txt
 /.vscode/
 /.pytest_cache/
+/app/

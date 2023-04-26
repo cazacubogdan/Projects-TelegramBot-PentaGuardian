@@ -105,7 +105,7 @@ def on_message(update: Update, context: CallbackContext):
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
 
-    # check_spam(update, context)  # Comment this line to disable check_spam
+    check_spam(update, context)  # Comment this line to disable check_spam
     check_links(update, context)
 
 def check_english(update: Update, context: CallbackContext):

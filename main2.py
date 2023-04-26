@@ -66,6 +66,7 @@ def on_message(update: Update, context: CallbackContext):
 
     # If the user is not in user_data, they have not been challenged yet
     if user_id not in context.user_data:
+        check_english(update, context)
         return
 
     # Check if the answer is correct
@@ -95,13 +96,8 @@ def on_message(update: Update, context: CallbackContext):
         # Remove the user's answer from user_data
         del context.user_data[user_id]
 
-        # # Check if the message is in English
-        # try:
-        #     language = detect(update.message.text)
-        #     if language != 'en':
-        #         update.message.delete()
-        # except:
-        #     pass
+        # Check if the message is in English
+        check_english(update, context)
 
     else:
         # 
@@ -109,7 +105,6 @@ def on_message(update: Update, context: CallbackContext):
         ban_user(user_id, update.effective_chat.id, ban_reason, context)
         with open("banned_users.txt", "a") as file:
             file.write(f"{user_id}\n")
-
 
 def check_english(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
